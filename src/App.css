@@ -1,0 +1,36 @@
+.entries-container {
+  margin-top: 20px;
+}
+
+.search-input {
+  padding: 6px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  width: 200px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-date {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #4f46e5;
+}
+
+.card-text {
+  font-size: 14px;
+  color: #333;
+}
+
