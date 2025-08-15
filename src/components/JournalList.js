@@ -1,84 +1,104 @@
-import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import React from "react";
 
-const JournalList = () => {
-  const [entries, setEntries] = useState([]);
-  const [searchDate, setSearchDate] = useState(null);
+const JournalList = ({ journals }) => {
+  if (!journals || journals.length === 0) {
+    return <p className="text-gray-500">No journal entries found.</p>;
+  }
 
-  useEffect(() => {
-    const q = query(collection(db, "journals"), orderBy("date", "desc"));
+  // Sort entries by date descending
+  const sorted = [...journals].sort((a, b) => b.date - a.date);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          ...d,
-          date: d.date?.toDate ? d.date.toDate() : new Date(d.date), // ✅ Convert to JS Date
-        };
-      });
-      console.log("Fetched entries:", data);
-      setEntries(data);
-    });
+  // Fallback images
+  const fallbackImages = [
+    "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&q=80",
+    "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=80",
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
+    "https://images.unsplash.com/photo-1485217988980-11786ced9454?w=800&q=80",
+    "https://images.unsplash.com/photo-1473187983305-f615310e7daa?w=800&q=80",
+  ];
 
-    return unsubscribe;
-  }, []);
+  // Ensure every entry has a valid image URL
+  const withImages = sorted.map(entry => {
+    const isValidUrl = entry.imageUrl?.startsWith("http");
+    return {
+      ...entry,
+      imageUrl: isValidUrl
+        ? entry.imageUrl
+        : fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
+    };
+  });
 
-  // ✅ Filter entries if searchDate is selected
-  const filteredEntries = searchDate
-    ? entries.filter(
-        (entry) =>
-          entry.date.getFullYear() === searchDate.getFullYear() &&
-          entry.date.getMonth() === searchDate.getMonth() &&
-          entry.date.getDate() === searchDate.getDate()
-      )
-    : entries;
+  const recentEntries = withImages.slice(0, 4);
+  const previousEntries = withImages.slice(4, 10);
 
   return (
-    <div className="mt-6 max-w-3xl mx-auto">
-      {/* Search Bar */}
-      <div className="flex items-center mb-4 bg-green-50 p-3 rounded-lg shadow-md border border-green-200">
-        <span className="mr-2 text-green-600">🔍</span>
-        <DatePicker
-          selected={searchDate}
-          onChange={(date) => setSearchDate(date)}
-          placeholderText="Search journals by date..."
-          className="border border-green-300 focus:ring-2 focus:ring-green-400 focus:outline-none p-2 rounded w-full"
-        />
-        {searchDate && (
-          <button
-            onClick={() => setSearchDate(null)}
-            className="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-          >
-            Clear
-          </button>
-        )}
-      </div>
+    <div className="space-y-8">
 
-      {/* Journal Entries */}
-      {filteredEntries.length === 0 ? (
-        <p className="text-gray-500 text-center">No journal entries found.</p>
-      ) : (
-        filteredEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="bg-white rounded-lg shadow-md p-4 mb-3 hover:shadow-lg transition"
-          >
-            <div className="text-green-600 font-bold">
-              {entry.date.toLocaleDateString()}
+      {/* Recent Journal Entries */}
+      <section>
+        <h2 className="text-xl font-bold mb-3">Recent Journal Entries</h2>
+        <div className="flex gap-4 overflow-x-auto pb-3">
+          {recentEntries.map(entry => (
+            <div
+              key={entry.id}
+              className="min-w-[250px] bg-white rounded-lg shadow-md overflow-hidden"
+            >
+              <img src={entry.imageUrl} alt="Journal" className="w-full h-40 object-cover" />
+              <div className="p-4">
+                <p className="text-green-600 font-bold">
+                  {entry.date instanceof Date ? entry.date.toLocaleDateString() : ""}
+                </p>
+                <p className="mt-2 text-gray-700 line-clamp-2">{entry.text}</p>
+              </div>
             </div>
-            <p className="mt-2 text-gray-700">{entry.entry}</p>
-          </div>
-        ))
-      )}
+          ))}
+        </div>
+      </section>
+
+      {/* Previous Entries */}
+      <section>
+        <h2 className="text-xl font-bold mb-3">Previous Entries</h2>
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {previousEntries.map(entry => (
+            <span
+              key={entry.id}
+              className="px-4 py-2 bg-gray-200 rounded-full whitespace-nowrap"
+            >
+              {entry.date instanceof Date ? entry.date.toLocaleDateString() : ""}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* My Entries */}
+      <section>
+        <h2 className="text-xl font-bold mb-3">My Entries</h2>
+        <div className="flex gap-4 overflow-x-auto pb-3">
+          {withImages.map(entry => (
+            <div
+              key={entry.id}
+              className="min-w-[250px] bg-white rounded-lg shadow-md overflow-hidden"
+            >
+              <img src={entry.imageUrl} alt="Journal" className="w-full h-40 object-cover" />
+              <div className="p-4">
+                <p className="text-green-600 font-bold">
+                  {entry.date instanceof Date ? entry.date.toLocaleDateString() : ""}
+                </p>
+                <p className="mt-2 text-gray-700">{entry.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 };
 
 export default JournalList;
+
+
+
 
 
 
